@@ -1,0 +1,14 @@
+### Ticket
+
+**You own one prepared ticket, from read to resolved.** A ticket from `/to-tickets` arrives with acceptance criteria, blocking edges, and usually a settled design. Build it through the Feature playbook, commit it, and resolve the ticket.
+
+The repo's `docs/agents/issue-tracker.md`, written by `/setup-matt-pocock-skills`, names the tracker and its commands to read, list, and close a ticket. Every ticket operation below uses them. Without that file, a path is a local ticket and a bare number is ambiguous. Look for `.scratch/*/issues/<NN>-*.md`, then the forge's issue (`gh` or `glab` per the `origin` remote), and ask with `question` when both or neither match.
+
+1. Pick the target. A ticket the task names is the target. A local number that matches tickets in more than one `.scratch/<feature>/` takes the feature in this conversation's context, else ask with `question`. With no ticket named, take the lowest-numbered frontier ticket, meaning an open ticket whose blockers are all done. Draw candidates from the tickets `/to-tickets` published in this conversation. With none in context, list the tracker's open `ready-for-agent` tickets. Candidates from more than one spec, with none in context, are the operator's call. Ask with `question`. No frontier ticket stops the playbook. Report what blocks each open ticket. State the pick and why before step 2.
+2. Read the ticket in full with its comments, its parent spec, and every ticket in its **Blocked by** list. Each blocker must be done, meaning closed on a forge or resolved per the tracker file locally. An open blocker stops the playbook. Name it in the reply and end there. Done when every acceptance criterion is a todo item.
+3. Find the design source. The design is settled when the spec or a blocker (usually the scaffold ticket) carries the sketch this ticket fills in, meaning its types, signatures, and module map. Settled means Feature steps 1 and 2 become `skip: designed during ticket prep, see <link>`. Otherwise run them.
+4. Open `playbooks/feature.md` and run steps 3 to 7. Commit on the current branch. The acceptance criteria are the success criteria in Feature step 4's delegate scope, and Feature step 5 verifies each one. When the sketch cannot absorb a criterion, that is an `architect` Phase E signal. Stop and report the friction instead of building around the design.
+5. Resolve the ticket with the tracker's close operation. Its closing note lists the commit SHAs and each acceptance criterion with its evidence, written per the **technical-writing** skill. A local ticket takes the note under `## Comments` and its resolved **Status** in the last commit.
+6. Name the next frontier. These are the tickets whose blockers are now all done.
+
+**Reply:** the ticket link or path, the commit SHAs, what you built, each acceptance criterion with its evidence, the skipped steps with their reasons, and the next frontier.

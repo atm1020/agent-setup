@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# Sync chosen plugins from github.com/cursor/plugins into the agent-setup repo's skills/cursor/, keeping local edits.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF2'
+Usage: port-cursor [--dry-run] [--ref REF] [--no-pull] [--list]
+
+Fetches cursor/plugins and syncs a chosen subset into the agent-setup repo as
+skills/cursor/: every skill and agent of each plugin in WHOLE, plus the single
+skills in PICKS (the ones the whole plugins depend on). Local edits are kept: each
+file is 3-way merged against the commit recorded in skills/cursor/upstream.json.
+Delete a skill's folder to drop it for good.
+
+  --dry-run   show what would change, write nothing
+  --ref REF   branch or tag to sync (default: the lock's ref, else main)
+  --no-pull   use the cached clone as it is
+  --list      print the skills and agent folders that would be synced, then exit
+
+Exits 1 if any file has merge conflicts. The clone is kept in
+$AGENT_SETUP_CACHE/upstream/cursor (default ~/.cache/agent-setup).
+EOF2
+}
+
+die() { echo "port-cursor: $*" >&2; exit 1; }
+
+NAME=cursor
+URL=https://github.com/cursor/plugins.git
+
+# Plugins taken whole: all their skills, their agents (as skills/cursor/agents/<plugin>/), README and LICENSE.
+WHOLE=(pstack)
+# Local names for upstream skills whose names clash with another upstream's (installed flat).
+declare -A RENAME=([tdd]=poteto-tdd [teach]=poteto-teach)
+# Single skills from other plugins, as <plugin>/<skill>. pstack's README ("not shipped here") lists these.
+PICKS=(cursor-team-kit/deslop cursor-team-kit/control-cli cursor-team-kit/control-ui)
+
+# The agent-setup repo this script lives in (.agents/skills/port-cursor/scripts/).
+REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../.." && pwd)
+[[ -f $REPO/scripts/vendor_sync.py ]] || die "$REPO has no scripts/vendor_sync.py"
+
+lock=$REPO/skills/$NAME/upstream.json
+ref=$( [[ -f $lock ]] && python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["ref"])' "$lock" || echo main)
+clone=${AGENT_SETUP_CACHE:-$HOME/.cache/agent-setup}/upstream/$NAME
+dry=() pull=1 list=0
+
+while (($#)); do
+  case $1 in
+    --dry-run) dry=(--dry-run) ;;
+    --ref) ref=${2:?--ref needs a value}; shift ;;
+    --no-pull) pull=0 ;;
+    --list) list=1 ;;
+    -h | --help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+# Full history (blobs fetched on demand), so the last-synced commit is available as merge base.
+if [[ ! -d $clone/.git || $(git -C "$clone" rev-parse --is-shallow-repository) == true ]]; then
+  rm -rf "$clone"
+  git clone --quiet --filter=blob:none --no-checkout "$URL" "$clone"
+fi
+if ((pull)); then
+  git -C "$clone" fetch --quiet origin "$ref"
+  git -C "$clone" checkout --quiet --force --detach FETCH_HEAD
+fi
+
+# "skills" or "agents" folder of a plugin, from its .cursor-plugin/plugin.json.
+plugin_dir() {
+  local manifest=$clone/$1/.cursor-plugin/plugin.json
+  [[ -f $manifest ]] || die "$manifest not found; the upstream layout changed"
+  python3 -c 'import json, sys; d = json.load(open(sys.argv[1])).get(sys.argv[2]); print(d.strip("./").rstrip("/") if d else "")' "$manifest" "$2"
+}
+
+skill_args=()
+declare -A files=()  # dest in skills/cursor/ -> path upstream
+add_skill() {
+  [[ -f $clone/$2/SKILL.md ]] || die "$2 has no SKILL.md; the upstream layout changed"
+  skill_args+=(--skill "$1=$2")
+}
+
+for p in "${WHOLE[@]}"; do
+  sdir=$(plugin_dir "$p" skills)
+  [[ -n $sdir && -d $clone/$p/$sdir ]] || die "$p publishes no skills folder"
+  for d in "$clone/$p/$sdir"/*/; do
+    d=${d%/}
+    n=${d##*/}
+    add_skill "${RENAME[$n]:-$n}" "$p/$sdir/$n"
+  done
+  adir=$(plugin_dir "$p" agents)
+  [[ -n $adir && -d $clone/$p/$adir ]] && skill_args+=(--skill "agents/$p=$p/$adir")
+  [[ -f $clone/$p/README.md ]] && files[README.$p.md]=$p/README.md
+  [[ -f $clone/$p/LICENSE ]] && files[LICENSE.$p]=$p/LICENSE
+done
+for pick in "${PICKS[@]}"; do
+  p=${pick%%/*}
+  add_skill "${pick#*/}" "$p/$(plugin_dir "$p" skills)/${pick#*/}"
+  [[ -f $clone/$p/LICENSE ]] && files[LICENSE.$p]=$p/LICENSE
+done
+((${#skill_args[@]})) || die "nothing to sync"
+
+if ((list)); then
+  for ((i = 1; i < ${#skill_args[@]}; i += 2)); do echo "${skill_args[i]/=/  }"; done
+  exit 0
+fi
+
+file_args=()
+for f in "${!files[@]}"; do file_args+=(--file "$f=${files[$f]}"); done
+
+python3 "$REPO/scripts/vendor_sync.py" --name "$NAME" --clone "$clone" --url "$URL" --ref "$ref" \
+  "${file_args[@]}" "${skill_args[@]}" "${dry[@]}"

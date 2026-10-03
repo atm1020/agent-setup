@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/herdrdev/herdr.git",
+  "ref": "v0.9.3",
+  "commit": "7b116c05bfda646af39d2524c54e70c751f57ee8",
+  "files": {
+    "LICENSE": "LICENSE"
+  },
+  "skills": {
+    "herdr": "skills/herdr"
+  },
+  "excluded": []
+}

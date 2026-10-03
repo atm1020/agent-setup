@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Sync the agent skills in github.com/herdrdev/herdr into the agent-setup repo's skills/herdr/, keeping local edits.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: port-herdr [--dry-run] [--ref REF] [--no-pull] [--list]
+
+Fetches herdrdev/herdr and syncs every skill under its skills/ folder, plus its
+LICENSE, into the agent-setup repo as skills/herdr/. Local edits are
+kept: each file is 3-way merged against the commit recorded in skills/herdr/upstream.json.
+Delete a skill's folder to drop it for good.
+
+The skill documents the herdr CLI, so pin it to the release you run (`herdr --version`).
+
+  --dry-run   show what would change, write nothing
+  --ref REF   tag or branch to sync (default: the lock's ref, else v0.9.3)
+  --no-pull   use the cached clone as it is
+  --list      print the skills upstream ships, then exit
+
+Exits 1 if any file has merge conflicts. The clone is kept in
+$AGENT_SETUP_CACHE/upstream/herdr (default ~/.cache/agent-setup).
+EOF
+}
+
+die() { echo "port-herdr: $*" >&2; exit 1; }
+
+NAME=herdr
+URL=https://github.com/herdrdev/herdr.git
+
+# The agent-setup repo this script lives in (.agents/skills/port-herdr/scripts/).
+REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../.." && pwd)
+[[ -f $REPO/scripts/vendor_sync.py ]] || die "$REPO has no scripts/vendor_sync.py"
+
+lock=$REPO/skills/$NAME/upstream.json
+ref=$( [[ -f $lock ]] && python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["ref"])' "$lock" || echo v0.9.3)
+clone=${AGENT_SETUP_CACHE:-$HOME/.cache/agent-setup}/upstream/$NAME
+dry=() pull=1 list=0
+
+while (($#)); do
+  case $1 in
+    --dry-run) dry=(--dry-run) ;;
+    --ref) ref=${2:?--ref needs a value}; shift ;;
+    --no-pull) pull=0 ;;
+    --list) list=1 ;;
+    -h | --help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+# Full history (blobs fetched on demand), so the last-synced commit is available as merge base.
+if [[ ! -d $clone/.git || $(git -C "$clone" rev-parse --is-shallow-repository) == true ]]; then
+  rm -rf "$clone"
+  git clone --quiet --filter=blob:none --no-checkout "$URL" "$clone"
+fi
+if ((pull)); then
+  git -C "$clone" fetch --quiet origin "$ref"
+  git -C "$clone" checkout --quiet --force --detach FETCH_HEAD
+fi
+
+[[ -d $clone/skills ]] || die "$clone/skills not found; the upstream layout changed"
+skill_args=()
+for d in "$clone"/skills/*/; do
+  d=${d%/}
+  [[ -f $d/SKILL.md ]] || die "skills/${d##*/} has no SKILL.md; the upstream layout changed"
+  skill_args+=(--skill "${d##*/}=skills/${d##*/}")
+done
+((${#skill_args[@]})) || die "no skills under $clone/skills"
+
+if ((list)); then
+  for ((i = 1; i < ${#skill_args[@]}; i += 2)); do echo "${skill_args[i]/=/  }"; done
+  exit 0
+fi
+
+python3 "$REPO/scripts/vendor_sync.py" --name "$NAME" --clone "$clone" --url "$URL" --ref "$ref" \
+  --file LICENSE=LICENSE "${skill_args[@]}" "${dry[@]}"

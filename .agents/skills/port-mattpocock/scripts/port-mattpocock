@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Sync github.com/mattpocock/skills into the agent-setup repo's skills/mattpocock/, keeping local edits.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: port-mattpocock [--dry-run] [--ref REF] [--no-pull] [--list]
+
+Fetches mattpocock/skills and syncs every skill its Claude Code plugin publishes
+(.claude-plugin/plugin.json), plus its README.md and LICENSE, into the agent-setup repo as
+skills/mattpocock/. Local edits are kept: each file is 3-way merged against the commit
+recorded in skills/mattpocock/upstream.json. Delete a skill's folder to drop it for good.
+
+  --dry-run   show what would change, write nothing
+  --ref REF   branch or tag to sync (default: the lock's ref, else main)
+  --no-pull   use the cached clone as it is
+  --list      print the skills upstream publishes, then exit
+
+Exits 1 if any file has merge conflicts. The clone is kept in
+$AGENT_SETUP_CACHE/upstream/mattpocock (default ~/.cache/agent-setup).
+EOF
+}
+
+die() { echo "port-mattpocock: $*" >&2; exit 1; }
+
+NAME=mattpocock
+URL=https://github.com/mattpocock/skills.git
+
+# The agent-setup repo this script lives in (.agents/skills/port-mattpocock/scripts/).
+REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../.." && pwd)
+[[ -f $REPO/scripts/vendor_sync.py ]] || die "$REPO has no scripts/vendor_sync.py"
+
+lock=$REPO/skills/$NAME/upstream.json
+ref=$( [[ -f $lock ]] && python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["ref"])' "$lock" || echo main)
+clone=${AGENT_SETUP_CACHE:-$HOME/.cache/agent-setup}/upstream/$NAME
+dry=() pull=1 list=0
+
+while (($#)); do
+  case $1 in
+    --dry-run) dry=(--dry-run) ;;
+    --ref) ref=${2:?--ref needs a value}; shift ;;
+    --no-pull) pull=0 ;;
+    --list) list=1 ;;
+    -h | --help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+# Full history (blobs fetched on demand), so the last-synced commit is available as merge base.
+if [[ ! -d $clone/.git || $(git -C "$clone" rev-parse --is-shallow-repository) == true ]]; then
+  rm -rf "$clone"
+  git clone --quiet --filter=blob:none --no-checkout "$URL" "$clone"
+fi
+if ((pull)); then
+  git -C "$clone" fetch --quiet origin "$ref"
+  git -C "$clone" checkout --quiet --force --detach FETCH_HEAD
+fi
+
+manifest=$clone/.claude-plugin/plugin.json
+[[ -f $manifest ]] || die "$manifest not found; the upstream layout changed"
+mapfile -t paths < <(python3 -c 'import json, sys; print("\n".join(json.load(open(sys.argv[1]))["skills"]))' "$manifest")
+((${#paths[@]})) || die "no skills listed in $manifest"
+
+if ((list)); then
+  for p in "${paths[@]}"; do echo "${p##*/}  ${p#./}"; done
+  exit 0
+fi
+
+skill_args=()
+for p in "${paths[@]}"; do
+  p=${p#./}
+  [[ -f $clone/$p/SKILL.md ]] || die "$p has no SKILL.md; the upstream layout changed"
+  skill_args+=(--skill "${p##*/}=$p")
+done
+
+python3 "$REPO/scripts/vendor_sync.py" --name "$NAME" --clone "$clone" --url "$URL" --ref "$ref" \
+  --file README.md=README.md --file LICENSE=LICENSE "${skill_args[@]}" "${dry[@]}"
