@@ -1,7 +1,7 @@
 {
   "url": "https://github.com/cursor/plugins.git",
   "ref": "main",
-  "commit": "23e4138daa01c42d4969f7a5465f82704e64f798",
+  "commit": "d0ef80d86795816da932a153458c5dbe192d294e",
   "files": {
     "LICENSE.cursor-team-kit": "cursor-team-kit/LICENSE",
     "LICENSE.pstack": "pstack/LICENSE",
@@ -17,6 +17,7 @@
     "bro": "pstack/skills/bro",
     "control-cli": "cursor-team-kit/skills/control-cli",
     "control-ui": "cursor-team-kit/skills/control-ui",
+    "correct": "pstack/skills/correct",
     "create-verification-skill": "pstack/skills/create-verification-skill",
     "deslop": "cursor-team-kit/skills/deslop",
     "figure-it-out": "pstack/skills/figure-it-out",
@@ -24,6 +25,7 @@
     "interrogate": "pstack/skills/interrogate",
     "maintain-verification-skill": "pstack/skills/maintain-verification-skill",
     "no-comments": "pstack/skills/no-comments",
+    "poteto-help": "pstack/skills/poteto-help",
     "poteto-mode": "pstack/skills/poteto-mode",
     "poteto-tdd": "pstack/skills/tdd",
     "poteto-teach": "pstack/skills/teach",

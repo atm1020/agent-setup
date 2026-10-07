@@ -28,7 +28,6 @@ Decompose the question into 2 to 4 exploration angles, each a distinct slice of 
 - `agent`: `explore` (read-only)
 - `model`: the `how explorer` line, default `openai/gpt-6.1-sol`
 
-
 Each explorer gets the prompt in `references/explorer-prompt.md` with its angle filled in. Then go to Step 3.
 
 ## Step 2b. Direct Explain (simple questions)
@@ -38,7 +37,6 @@ Spawn one subagent that explores and explains in one pass:
 - `agent`: `explore` (read-only)
 - `model`: the `how explainer` line, default `openai/gpt-6-astra`
 
-
 Build its prompt from `references/explainer-prompt.md` without the explorer-findings section. Go to Step 4.
 
 ## Step 3. Synthesize (complex questions only)
@@ -47,7 +45,6 @@ Once all explorers have returned, spawn one subagent to synthesize their finding
 
 - `agent`: `explore` (read-only)
 - `model`: the `how explainer` line, default `openai/gpt-6-astra`
-
 
 Build its prompt from `references/explainer-prompt.md` with every explorer's findings filled in.
 

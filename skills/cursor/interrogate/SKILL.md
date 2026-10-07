@@ -47,7 +47,6 @@ For each reviewer:
 - `agent`: `explore` (read-only)
 - `model`: the configured `interrogate reviewers` entry, or the table default with no configured line. For an `auto` or `inherit-parent` entry, omit `model` so that reviewer runs on the parent model.
 
-
 If the `subagent` tool rejects a configured entry, run that reviewer on its table default and say so. If it rejects a table default, check the valid slugs in the `subagent` tool's error message, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with it, and open a separate PR to update the default table. Do not block the review on the slug issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
