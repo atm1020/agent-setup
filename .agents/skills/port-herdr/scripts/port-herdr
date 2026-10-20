@@ -7,7 +7,7 @@ usage() {
 Usage: port-herdr [--dry-run] [--ref REF] [--no-pull] [--list]
 
 Fetches herdrdev/herdr and syncs every skill under its skills/ folder, plus its
-LICENSE, into the agent-setup repo as skills/herdr/. Local edits are
+LICENSE and any root NOTICE file, into the agent-setup repo as skills/herdr/. Local edits are
 kept: each file is 3-way merged against the commit recorded in skills/herdr/upstream.json.
 Delete a skill's folder to drop it for good.
 
@@ -73,5 +73,10 @@ if ((list)); then
   exit 0
 fi
 
+file_args=(--file LICENSE=LICENSE)
+for notice in NOTICE NOTICE.txt NOTICE.md; do
+  [[ ! -f $clone/$notice ]] || file_args+=(--file "$notice=$notice")
+done
+
 python3 "$REPO/scripts/vendor_sync.py" --name "$NAME" --clone "$clone" --url "$URL" --ref "$ref" \
-  --file LICENSE=LICENSE "${skill_args[@]}" "${dry[@]}"
+  "${file_args[@]}" "${skill_args[@]}" "${dry[@]}"

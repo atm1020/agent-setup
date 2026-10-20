@@ -1,0 +1,40 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python3 scripts/check.py
+      - run: python3 -m unittest discover -s tests
+      - name: Shell syntax
+        run: bash -n install.sh .agents/skills/*/scripts/* skills/cursor/poteto-mode/scripts/worktree-audit.sh skills/mattpocock/wizard/template.sh
+      - name: Isolated install
+        run: python3 scripts/port.py --source . --project "$(mktemp -d)" --target claude,opencode,agents
+      - name: Installer dry run
+        run: ./install.sh --dry-run --no-herdr
+
+  vendored-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: python3 scripts/test-vendored.py

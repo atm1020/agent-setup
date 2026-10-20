@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun test orch"
+    "test": "bun test orch check-plan.test.ts"
   },
   "dependencies": {
     "commander": "14.0.0"

@@ -21,6 +21,21 @@ class LicenseTest(unittest.TestCase):
                 for name in licenses:
                     self.assertTrue((lock.parent / name).is_file(), f"{lock.parent / name} is in the lock but missing")
 
+    def test_each_upstream_is_attributed(self):
+        attribution = (REPO / "THIRD_PARTY.md").read_text()
+        for lock in sorted(REPO.glob("skills/*/upstream.json")):
+            with self.subTest(upstream=lock.parent.name):
+                data = json.loads(lock.read_text())
+                self.assertIn(f"skills/{lock.parent.name}/", attribution)
+                self.assertIn(data["url"].removesuffix(".git"), attribution)
+
+    def test_tracked_notices_are_present(self):
+        for lock in sorted(REPO.glob("skills/*/upstream.json")):
+            for name in json.loads(lock.read_text())["files"]:
+                if Path(name).name.upper().startswith("NOTICE"):
+                    with self.subTest(upstream=lock.parent.name, notice=name):
+                        self.assertTrue((lock.parent / name).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

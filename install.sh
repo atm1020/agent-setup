@@ -75,6 +75,9 @@ if ((uninstall)); then
   exit 0
 fi
 
+say "Validating repository"
+python3 "$REPO/scripts/check.py" --source "$REPO"
+
 say "Skills and agents"
 args=(--source "$REPO" --target "$TARGETS" --prune $link)
 ((dry)) && args+=(--dry-run)

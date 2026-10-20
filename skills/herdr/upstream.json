@@ -1,7 +1,7 @@
 {
   "url": "https://github.com/herdrdev/herdr.git",
-  "ref": "v0.9.3",
-  "commit": "7b116c05bfda646af39d2524c54e70c751f57ee8",
+  "ref": "v0.9.5",
+  "commit": "2ecf19a92fc3a7fff75b6ce3655ef04f4625ec01",
   "files": {
     "LICENSE": "LICENSE"
   },

@@ -45,7 +45,7 @@ Upstream targets Cursor. The local copies are edited to run in OpenCode v2, whic
 - `.cursor/skills/` → `.agents/skills/`.
 - `make-bot-ui` (Cursor's Grok Bot) is deleted, so syncs exclude it.
 - Origin (Cursor's internal git host) and Bugbot (Cursor's PR review bot) are stripped: PR steps use `gh` only, review-bot comments are triaged per `poteto-mode/playbooks/babysit.md` step 8, and `references/bugbot-triage.md` is deleted.
-- The `opening-a-pr` playbook and `scripts/watch-pr` are deleted, so syncs drop their upstream updates. Playbooks no longer end with "Run **Opening a PR**". `babysit` and `shipping` read PR state with `gh pr view` / `gh pr checks --watch`, with no watcher verdicts (`READY`, `WAITING`, `ADVANCE`, `COMPLETE`). Verify script edits with `bun test orch` on a copy of `poteto-mode/scripts`.
+- The `opening-a-pr` playbook and `scripts/watch-pr` are deleted, so syncs drop their upstream updates. Playbooks no longer end with "Run **Opening a PR**". `babysit` and `shipping` read PR state with `gh pr view` / `gh pr checks --watch`, with no watcher verdicts (`READY`, `WAITING`, `ADVANCE`, `COMPLETE`). Verify script edits with `python3 scripts/test-vendored.py`; it uses a scratch copy and the prerequisites documented in `docs/setup.md#verification`. Non-dry syncs and installs run `scripts/check.py`, which includes this port's `check.py` compatibility rules.
 
 After a sync, `grep -rniE 'cursor|Task\b|subagent_type|agent-transcripts|/loop|grok|claude-opus|bugbot|origin pr' skills/cursor` shows new upstream text that needs the same treatment.
 

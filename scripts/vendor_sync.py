@@ -229,7 +229,14 @@ def main() -> int:
         print(f"  conflict {c}")
     if s.conflicts:
         print(f"{len(s.conflicts)} conflict(s): resolve the markers (<<<<<<< local / >>>>>>> upstream) before committing")
-    return 1 if s.conflicts else 0
+    if s.conflicts:
+        return 1
+    if not args.dry_run:
+        # Each port owns its layout/harness policy. The shared gate only runs it.
+        return subprocess.run([
+            sys.executable, str(REPO / "scripts/check.py"), "--source", str(REPO),
+        ]).returncode
+    return 0
 
 
 if __name__ == "__main__":

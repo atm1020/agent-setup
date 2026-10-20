@@ -44,10 +44,12 @@ The home of all the user's own skills, subagents and agent configs (global instr
 Never test against the real home folders when a scratch project will do.
 
 ```bash
+python3 scripts/check.py                      # merge markers and port-owned compatibility rules
 bash -n install.sh .agents/skills/*/scripts/*   # syntax
 .agents/skills/port-mattpocock/scripts/port-mattpocock --dry-run   # what a sync would change
 python3 -m py_compile scripts/port.py
-python3 -m unittest discover -s tests           # every upstream ships its LICENSE
+python3 -m unittest discover -s tests           # validation gates, scratch runner, licenses
+python3 scripts/test-vendored.py                # pinned Bun + Node >=20; prerequisites in docs/setup.md#verification
 ./install.sh --dry-run                          # touches nothing
 python3 scripts/port.py --source . --project "$(mktemp -d)" --target claude,opencode,agents   # isolated install
 ```
