@@ -1,7 +1,7 @@
 {
   "url": "https://github.com/cursor/plugins.git",
   "ref": "main",
-  "commit": "d457567332aa6989e753ea289f30ea2bfbc80bc0",
+  "commit": "6b0300214a09fd6029cfb7077043125758cd1fd2",
   "files": {
     "LICENSE.cursor-team-kit": "cursor-team-kit/LICENSE",
     "LICENSE.pstack": "pstack/LICENSE",
@@ -26,6 +26,7 @@
     "in-your-own-words": "pstack/skills/in-your-own-words",
     "interrogate": "pstack/skills/interrogate",
     "ketchup": "pstack/skills/ketchup",
+    "ketchup-video": "pstack/skills/ketchup-video",
     "maintain-formal-verification-skill": "pstack/skills/maintain-formal-verification-skill",
     "maintain-verification-skill": "pstack/skills/maintain-verification-skill",
     "no-comments": "pstack/skills/no-comments",
@@ -62,6 +63,7 @@
     "setup-pstack": "pstack/skills/setup-pstack",
     "sharpen": "pstack/skills/sharpen",
     "show-me-your-work": "pstack/skills/show-me-your-work",
+    "statechart": "pstack/skills/statechart",
     "swarm": "pstack/skills/swarm",
     "technical-writing": "pstack/skills/technical-writing",
     "typescript-best-practices": "pstack/skills/typescript-best-practices",

@@ -1,16 +1,21 @@
 ### Orchestrate
 
-**You own the program, never the code. Author briefs, drain the queue, keep the frontier green, decide.** For a whole project handed to one standing coordinator chat: multi-day, many stacked PRs, dozens to hundreds of subagents, the human checking in twice a day instead of every five minutes. One task driven to a predicate is Autonomous run. One ambitious run needing a bespoke workflow is figure-it-out. Route here when the work outlives any single agent. Work one agent could finish inside the session's budget is not a program.
+**You run the program, never the code. Decide which agent does each piece of work, then check what each one produces.** For a standing project handed to one coordinator chat: multi-day, many stacked PRs, dozens to hundreds of subagents, few human turns. One task driven to a predicate is Autonomous run. One ambitious run that needs a bespoke workflow is figure-it-out. Work that one agent could finish inside the session's budget is not a program.
 
-Ceremony must scale with the program. On cheap near-identical units, collapse it as each section directs.
+Run the program through the `subagent` tool. Keep its state in the pstack store (`~/.local/share/pstack/<repo-name>/`) with the bookkeeping CLI below. Watch PRs with event subscriptions when available, otherwise a blocking background watcher per Autonomous run step 2. Relay upstream context through the coordinator, never between siblings.
 
-Three rules carry the rest.
+#### Topology
 
-- Completions are queue events, not interrupts.
-- Every spawn and every resume carries the standing orders verbatim.
-- The brief is the product. A vague brief fails quietly, because a worker cannot ask you a question.
+- **One owner per PR.** The owner writes its branch. Stack topology has one writer, the designated stacker, per Stack safety below. Closing or retargeting a base PR orphans every PR above it. You never author or edit code. Conflicted merges, chain rebases, and fixes are delegated tasks.
+- **A fresh worker for each independent task.** Its kickoff carries everything it needs, including each upstream report it depends on, pasted in full. Workers can't see their siblings. Run each worker as a local background subagent in its own git worktree. Size concurrency to this machine, with only one or two heavy jobs at once. Pick each subagent's reasoning level for the job, per the Subagents section.
+- **A sub-coordinator only when one area has many parallel workers.** It owns that area's workers and kickoffs and sends you one rollup, never raw worker reports. Stop at three levels: you, sub-coordinators, and workers. Keep about ten workers in flight per coordinator, and start the next one as each finishes instead of waiting on a whole batch.
+- **Reuse a worker only when new work needs its built state,** such as uncommitted changes or a running process that is costly to move. Otherwise spawn fresh with consolidated scope. Never message one to check on it, because a message restarts an idle agent.
+- **Each nontrivial PR gets a verifier that isn't its author,** on a different GPT model. Cheap single-command units use the receipt and spot-check rule under Verification. The designated landing owner merges only with a verdict for the current head.
+- **Start with one unit.** Take it through kickoff, owner, verifier, and merge before you fan out, so a flaw in the kickoff costs one agent instead of fifty. On near-identical cheap units, the first unit is that test.
 
-#### Roles and placement
+#### Supervision
+
+Scale ceremony to the program. Completions are queue events, not interrupts. Every spawn and resume carries the standing orders. The brief is the product. Check each PR's live state with `gh pr view` and `gh pr checks` before reporting. Read the worker's diff or artifact, not only its summary. The roles and runtime below retain this port's local bookkeeping and single-writer stack policy.
 
 - **Coordinator (this chat).** Local. Frames, authors briefs, drains the inbox, owns the human report, makes judgment calls. It never authors or edits code. Conflicted merges, restacks, and code changes are always tasks. Mechanically landing a verified unit (fast-forward or clean cherry-pick of a worker's commit, then push) is bookkeeping the coordinator may do itself on repos where local git is cheap. Queueing finished work behind an idle stacker is how a deadline harvests nothing. The loop is agentic end to end. Agents are spawned, resumed, and drained only through the `subagent` tool. State reads and writes go through `scripts/orch/orch.ts` at drain points, one command in and one line out. The CLI never spawns, waits, or wakes anything.
 - **Sub-coordinator.** Always local, durable, one per track, and only when the program exceeds what one coordinator's drains can manage. A track the coordinator can drain itself needs no middle layer. Each nested layer re-pays a full orientation preamble, and a blocking sub-coordinator hides its children while the parent idles. Owns its track's units and boards, authors its workers' briefs, spawns its own workers and verifiers (nesting works to depth 3, and a nested spawn has the full `subagent` schema). Rolls up aggregates at wave boundaries. Never forwards raw child reports. Cap in-flight children at what one drain can process, roughly ten, as a rolling window. Never as blocking batches, which cost the slowest child of every batch.

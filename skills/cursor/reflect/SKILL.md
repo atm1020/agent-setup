@@ -53,6 +53,8 @@ Present the synthesizer's full Accepted / Rejected / Backlog output and wait for
 
 File each Backlog item to your team's devex or backlog tracker without waiting. Only the Accepted list waits for approval.
 
+Edit skills only in this repo, the source of truth. Before approval, show the source path under `skills/`. After approval, edit that source; never edit generated tool folders. New third-party skills arrive through their port. Never open a PR or push.
+
 Follow each approved row's Routing exactly:
 
 - Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): parent does directly.

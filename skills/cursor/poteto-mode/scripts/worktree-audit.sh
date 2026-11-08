@@ -47,6 +47,13 @@ origin/*) git fetch origin "+refs/heads/${base#origin/}:refs/remotes/$base" --qu
 esac
 git rev-parse --verify --quiet "$base^{commit}" >/dev/null 2>&1 || { echo "error: base ref not found: $base" >&2; exit 1; }
 
+# GNU date treats -r as a file; BSD date uses it for an epoch timestamp.
+if date -d '@0' '+%Y-%m-%d' >/dev/null 2>&1; then
+	fmt_day() { date -d "@$1" '+%Y-%m-%d'; }
+else
+	fmt_day() { date -r "$1" '+%Y-%m-%d'; }
+fi
+
 # PR state by branch, fetched once as [{number, state, head}] with a lowercase
 # state. Empty when the GitHub CLI cannot read this repo's PRs.
 prs=$(mktemp)
@@ -106,7 +113,7 @@ ts = [c.execute(q.format(t), (wt, wt + "/%")).fetchone()[0] or 0 for t in ("sess
 print(max(ts) // 1000)
 PY
 )
-		[ "$last_ts" -gt 0 ] 2>/dev/null && last=$(date -d "@$last_ts" '+%Y-%m-%d' 2>/dev/null || date -r "$last_ts" '+%Y-%m-%d')
+		[ "$last_ts" -gt 0 ] 2>/dev/null && last=$(fmt_day "$last_ts" 2>/dev/null)
 	fi
 	recent=$([ "$last_ts" -gt 0 ] 2>/dev/null && [ $(( (now - last_ts) / 86400 )) -le 4 ] && echo yes || echo no)
 
