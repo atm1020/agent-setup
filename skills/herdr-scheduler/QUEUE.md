@@ -5,26 +5,33 @@ Use an existing project task format when it can hold these fields. Otherwise cre
 ```markdown
 # Herdr queue
 
-Project: <absolute path>
-Coordinator: <current Herdr session/socket identity and pane ID>
+Project or control directory: <absolute path>
+Repos: <absolute path per in-scope repo; the single project itself when there is only one>
+Coordinator: <current Herdr session/socket identity, workspace ID, tab ID, and pane ID>
+Labels: <original tab/coordinator labels and the scheduler labels set by this run>
 Supervision: active | paused
 Updated: <timestamp with timezone>
 Worker limit: 2
 
-| ID | Outcome | Type | State | Depends on | Writable scope | Worker / pane |
-|---|---|---|---|---|---|---|
-| task-1 | Investigate the failing login test | investigate | queued | none | read-only | none |
+| ID | Repo | Outcome | Type | State | Depends on | Writable scope | Worker / tab / pane |
+|---|---|---|---|---|---|---|---|
+| task-1 | project-a | Investigate the failing login test | investigate | queued | none | read-only | none |
 
 ## task-1
 
+- Repo: <absolute path and default branch; the worker's working directory>
 - Authorization: <user request or approval; proposed work is not authorized>
 - Priority: <explicit priority, or request order>
 - Context: <sources, decisions, existing changes to preserve>
 - Acceptance: <observable result and relevant check commands>
-- Endpoint: <session/socket identity, agent name, pane ID, cwd; none until created>
+- Worker: <resolved Herdr agent kind and selection reason; explicit model choice, or harness default>
+- Isolation: <worktree branch, base, and checkout path for an implement task; shared checkout for an investigate task, or the recorded reason a worktree was impossible>
+- Endpoint: <session/socket identity, workspace ID, worker tab ID, root pane ID, agent name, cwd; none until created>
 - Submission: <not sent, confirmed active, or uncertain; timestamp and evidence>
-- Result: <findings or changed files; evidence references>
+- Report: <path to notes/<task-id>/report.md; written by the worker, read by the coordinator>
+- Result: <one-line outcome and changed files; detail stays in the report>
 - Verification: <checks actually run and outcomes; not-run checks identified>
+- Integration: <branch not integrated, merged, PR opened, or abandoned by the user; a worktree stays until this is settled>
 - Blocker / next action: <decision, dependency, capacity, or none>
 - History: <timestamped state transitions, steering, and recovery decisions>
 ```
@@ -33,4 +40,4 @@ States: `proposed`, `queued`, `starting`, `running`, `verifying`, `blocked`, `do
 
 `starting`, `running`, `verifying`, and any blocked or cancelling task with a live worker reserve capacity and writable scope. A task record is not proof of current liveness or successful delivery. Reconcile endpoints before recovery, retries, or releasing ownership. Save each endpoint as soon as it is known, and preserve uncertainty explicitly if an operation's result was lost.
 
-Only the coordinator updates the queue. Keep secrets and full terminal transcripts out of it; store concise evidence pointers instead. Preserve unrelated project records and never overwrite an existing queue to start a new batch.
+A queue covering several repos lives in the coordinator's control directory and is never written into one of those repos. Only the coordinator updates the queue. Keep secrets and full terminal transcripts out of it; store concise evidence pointers instead. Preserve unrelated project records and never overwrite an existing queue to start a new batch.

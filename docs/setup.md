@@ -24,6 +24,7 @@ Needs `git` and `python3`.
 | `.agents/skills/port-<upstream>/` | project-local skill + script that ports and updates that upstream (`.claude/skills` links here) | not installed; only agents working in this repo see it |
 | `agents/<name>.md` | my subagents | `~/.claude/agents`, `~/.config/opencode/agents` |
 | `config/AGENTS.md` | global instructions (optional) | `~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` |
+| `config/herd/AGENTS.md` | the scheduler control room's instructions: which repos may be scheduled | `~/herd/AGENTS.md` (plus a `CLAUDE.md` shim) |
 
 Third-party skills are **copied into `skills/<upstream>/`** so I can edit them, and kept in sync with their upstream by a port skill per repo. So far: [mattpocock/skills](https://github.com/mattpocock/skills) in `skills/mattpocock/`, and from [cursor/plugins](https://github.com/cursor/plugins) the `pstack` plugin (skills and subagents) plus the `cursor-team-kit` skills it uses, in `skills/cursor/`, and the agent skill from [herdrdev/herdr](https://github.com/herdrdev/herdr) (pinned to its release tag) in `skills/herdr/`.
 
@@ -48,7 +49,16 @@ If `herdr` is on PATH, it also installs Herdr's integrations for opencode, pi an
 - **Skill:** `skills/<name>/SKILL.md` with `name` (lowercase-hyphen, same as the folder) and `description` frontmatter, then `./install.sh`.
 - **Subagent:** `agents/<name>.md`, then `./install.sh`.
 - **Global instructions:** `config/AGENTS.md`, then `./install.sh`.
+- **A repo the scheduler may schedule into:** add a row to the table in `config/herd/AGENTS.md`. No install needed; it is symlinked.
 - **Third-party skills:** write a `.agents/skills/port-<repo>/` skill whose script fetches the repo and lists its skills, then calls `scripts/vendor_sync.py --name <repo>`. Copy `.agents/skills/port-mattpocock` as the template.
+
+### Herdr task scheduling
+
+The original `herdr-scheduler` skill adds a lightweight, FirstMate-inspired queue over Herdr. For example: “Use herdr-scheduler to investigate the login failure, then fix it once I approve the findings; also audit the docs.” It checks authorization and dependencies, starts fresh agents for ready work, and verifies results. It defaults to two workers. Investigation runs in a tab on the existing checkout; anything that writes code gets its own Git worktree and branch through `herdr worktree`, so concurrent writers cannot collide and a verified task leaves a branch for you to merge, PR or drop. Workers write their full result to a `report.md` and return only its path, keeping the coordinator's context small. The coordinator stays in its original, scheduler-labeled tab, and nothing steals focus.
+
+To schedule across several repos, run the coordinator in its own control room instead of inside one of them: `config/herd/AGENTS.md` installs to `~/herd/AGENTS.md`, and a session started there (`opencode ~/herd`, `cd ~/herd && pi`, or `cd ~/herd && claude`) reads it, loads the skill, and keeps one queue at `~/herd/queue.md` covering every repo. Workers still run in the real repos, each in its own tab with that repo as its working directory. The charter is thin on purpose: a repo table, the queue location, and what needs approval. Nothing is schedulable until it has a row in that table, so putting a repo in scope means editing `config/herd/AGENTS.md` (symlinked, so the edit is live at once). `~/herd` is deliberately not a git repo, so queue state is never committed. Pi asks once whether to trust the directory's files; `pi --append-system-prompt ~/herd/AGENTS.md` works from anywhere instead.
+
+For a single project, queue state defaults to `.herdr-scheduler/queue.md` in it. Ask to “resume the Herdr queue” to reconcile existing workers before dispatching more. It requires a Herdr-managed session and the selected worker CLI. Workers default to the coordinator's harness (Pi, OpenCode, or Claude Code); explicit queue-wide or per-task choices can mix supported harnesses. Prompts and results pass through Herdr, with the coordinator relaying between workers. It does not install FirstMate, a persistent watcher, or timed/unattended execution. Install it through the normal installer; no separate service setup is needed.
 
 ## Syncing upstream skills
 

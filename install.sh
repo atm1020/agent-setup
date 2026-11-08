@@ -13,7 +13,8 @@ Usage: ./install.sh [--dry-run] [--copy] [--no-herdr] [--uninstall]
   --no-herdr   skip Herdr integrations
   --uninstall  remove everything this script installed
 
-Targets: ~/.claude (Claude Code), ~/.config/opencode (OpenCode), ~/.agents (Pi, also read by OpenCode).
+Targets: ~/.claude (Claude Code), ~/.config/opencode (OpenCode), ~/.agents (Pi, also read by OpenCode),
+         ~/herd (the scheduler control room, if config/herd/ exists).
 EOF
 }
 
@@ -42,6 +43,8 @@ LINKS=(
   "config/AGENTS.md|$HOME/.claude/CLAUDE.md"
   "config/AGENTS.md|$HOME/.config/opencode/AGENTS.md"
   "config/AGENTS.md|$HOME/.pi/agent/AGENTS.md"
+  "config/herd/AGENTS.md|$HOME/herd/AGENTS.md"
+  "config/herd/CLAUDE.md|$HOME/herd/CLAUDE.md"
 )
 
 link_file() {

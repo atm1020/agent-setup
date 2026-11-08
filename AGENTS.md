@@ -14,6 +14,7 @@ The home of all the user's own skills, subagents and agent configs (global instr
 - `scripts/vendor_sync.py`: the shared sync engine. 3-way merges each file of each skill and each extra `--file` (base = commit in the lock, theirs = new upstream, ours = `skills/<repo>/...`), adds new upstream skills, excludes skills deleted locally, refuses to overwrite untracked local folders, and writes `skills/<repo>/upstream.json`. Exits 1 on conflicts.
 - `agents/<name>.md`: the user's subagents (empty for now).
 - `config/AGENTS.md`: the user's **global** instructions, symlinked to `~/.claude/CLAUDE.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md` when present. Not instructions for this repo.
+- `config/herd/AGENTS.md`: the charter for the scheduler control room, symlinked to `~/herd/AGENTS.md` (with a `CLAUDE.md` containing `@AGENTS.md` beside it). It names the repos the `herdr-scheduler` coordinator may schedule into and where its queue lives; the skill still owns the workflow, so keep the charter thin. Not instructions for this repo.
 - `install.sh`: entry point. It fetches nothing; it installs this repo only:
   1. Calls `scripts/port.py --source <repo>`.
   2. Links the files listed in its `LINKS` array, skipping sources that don't exist.
